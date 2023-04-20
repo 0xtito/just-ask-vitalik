@@ -6,20 +6,34 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "scrape": "tsx -r dotenv/config ./scripts/scrape-essays.ts",
+    "ask-vitalik": "tsx -r dotenv/config ./scripts/vitalik-qa.ts"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.14",
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@supabase/supabase-js": "^2.21.0",
     "@types/node": "18.15.11",
     "@types/react": "18.0.37",
     "@types/react-dom": "18.0.11",
     "autoprefixer": "10.4.14",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.3",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
+    "langchain": "^0.0.59",
     "next": "13.3.0",
     "postcss": "8.4.23",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "serpapi": "^1.1.1",
+    "sharp": "^0.32.0",
     "tailwindcss": "3.3.1",
     "typescript": "5.0.4"
+  },
+  "devDependencies": {
+    "gpt-3-encoder": "^1.1.4",
+    "tsx": "^3.12.6"
   }
 }
