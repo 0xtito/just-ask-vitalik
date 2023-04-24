@@ -1,7 +1,10 @@
 import { createAgent } from "@/utils/createAgent";
+import { initChatOpenAI } from "@/utils/clients/openai-client";
+import { BufferMemory } from "langchain/memory";
 
 async function qa() {
-  const agent = await createAgent();
+  const openai = initChatOpenAI(0.1);
+  const agent = await createAgent(openai, new BufferMemory());
 
   if (!agent) {
     throw new Error("Could not create agent");
@@ -10,11 +13,6 @@ async function qa() {
   const result = await agent.call({
     input: "What are your thoughts on Polkadot?",
   });
-
-  // const result = await agent.execute({
-  //     input: "What is Ethereum?",
-  //     agent_scratchpad: "",
-  // });
 
   console.log(result);
 }
