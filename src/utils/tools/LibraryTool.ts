@@ -1,35 +1,29 @@
-import type { CallbackManager } from "langchain/callbacks";
-import { BaseLanguageModel } from "langchain/dist/base_language";
 import { OpenAIEmbeddings } from "langchain/embeddings";
 import { Tool } from "langchain/tools";
 import { SupabaseVectorStore } from "langchain/vectorstores";
-
 import { supabase } from "../clients/supabase-client";
 import { StringPromptValue } from "langchain/prompts";
+import { ChatOpenAI } from "langchain/chat_models/openai";
 
-interface LibraryToolArgs {
-  model: BaseLanguageModel;
-  philosopher: string;
-  embeddings: OpenAIEmbeddings;
-  verbose?: boolean;
-  callbackManager?: CallbackManager;
-}
+import { LibraryToolArgs } from "@/types";
 
+/**
+ * A Tool for the Agent to Search through their ow library
+ *    - currently not being used
+ *    - using the VectorStoreQATool from Langchain instead
+ */
 export class LibraryTool extends Tool {
-  private model: BaseLanguageModel;
+  private model: ChatOpenAI;
   private embeddings: OpenAIEmbeddings;
-  private philosopher: string;
 
   constructor({
     model,
-    philosopher,
     embeddings,
     verbose,
     callbackManager,
   }: LibraryToolArgs) {
     super(verbose, callbackManager);
     this.model = model;
-    this.philosopher = philosopher;
     this.embeddings = embeddings;
   }
 
@@ -47,13 +41,7 @@ export class LibraryTool extends Tool {
     const rawResults = await vs.similaritySearch(text, 5);
 
     const results = rawResults.map((doc) => doc.pageContent).join("\n");
-
-    const input = `You are ${this.philosopher
-      .split("_")
-      .map((name) => name[0].toUpperCase() + name.slice(1))
-      .join(
-        " "
-      )} and this is your work. Write a descriptive summary of the following context:\n\n
+    const input = `You are Vitalik Buterin and this is your work. Write a descriptive summary of the following context:\n\n
         ${results}
         \n\nConcise Summary: 
         `;

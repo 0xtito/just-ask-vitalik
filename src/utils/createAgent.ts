@@ -1,38 +1,23 @@
-import { LLMChain } from "langchain/chains";
+import { LLMChain, ConversationChain } from "langchain/chains";
 import { AgentExecutor, LLMSingleActionAgent } from "langchain/agents";
 
-import { CallbackManager } from "langchain/callbacks";
-import { LLMResult } from "langchain/schema";
-
-import { PromptTemplate } from "langchain/prompts";
-import { SupabaseVectorStore } from "langchain/vectorstores/supabase";
-import { supabase } from "./clients/supabase-client";
-import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-// import { createToolkit } from "./create-toolkit";
-import { openai } from "./clients/openai-client";
-import { ChatConversationalAgent } from "langchain/agents";
+import { BufferMemory } from "langchain/memory";
 
 import {
   VitalikPromptTemplate,
-  CustomOutputParser,
+  VitalikOutputParser,
 } from "./agents/vitalikAgent";
 import { createToolkit } from "./createToolkit";
-import { Tool } from "langchain/tools";
+import { ChatOpenAI } from "langchain/chat_models/openai";
 
-/**
- * The Agent is going to contain at least two tools:
- *  1. To search through the philosphers respective vectorstore
- *  2. To search through the context from the articles returned from apify (which is also stored in a vector store)
- *
- */
-
-export async function createAgent() {
-  console.log("retrieving vector stores...");
-
-  console.log("retrieved vector stores");
-
+export async function createAgent(
+  openai: ChatOpenAI,
+  key: string,
+  chatHistory: BufferMemory,
+  callbackManager?: (token: string) => void
+) {
   console.log("creating toolkit...");
-  const tools = await createToolkit();
+  const tools = await createToolkit(openai, key, chatHistory);
 
   if (!tools) {
     throw new Error("Could not create tools");
@@ -40,52 +25,42 @@ export async function createAgent() {
 
   console.log("created toolkit");
 
-  // may use this later
-  const callbackManager = CallbackManager.fromHandlers({
-    async handleLLMStart(_llm: { name: string }, prompts: string[]) {
-      console.log(JSON.stringify(prompts, null, 2));
-    },
-    async handleLLMEnd(output: LLMResult) {
-      for (const generation of output.generations) {
-        for (const gen of generation) {
-          console.log(gen.text);
-        }
-      }
-    },
-  });
-
-  const llmChain = new LLMChain({
+  console.log("Creating conversational chain");
+  const conversationChain = new ConversationChain({
     prompt: new VitalikPromptTemplate({
       tools,
-      inputVariables: ["input", "agent_scratchpad"],
+      inputVariables: ["input", "agent_scratchpad", "chat_history"],
     }),
     llm: openai,
-    verbose: true,
+    memory: chatHistory,
   });
 
-  console.log("created llm chain");
-  console.log("-------------------");
+  //   const llmChain = new LLMChain({
+  //     prompt: new VitalikPromptTemplate({
+  //       tools,
+  //       inputVariables: ["input", "agent_scratchpad", "chat_history"],
+  //     }),
+  //     llm: openai,
+  //     verbose: true,
+  //     memory: chatHistory,
+  //   });
+
+  console.log("created conversational chain");
+  console.log("\n-------------------\n");
   console.log("creating agent executor...");
 
   const agent = new LLMSingleActionAgent({
-    llmChain,
-    outputParser: new CustomOutputParser(),
+    llmChain: conversationChain,
+    outputParser: new VitalikOutputParser(tools),
     stop: [`\nObservation`],
   });
 
-  //   const agent = new ChatConversationalAgent({
-  //     llmChain,
-  //     outputParser: new CustomOutputParser(),
-  //     allowedTools: tools.map((tool) => tool.name),
-  //   });
-
-  const agentExecutor = new AgentExecutor({
+  const agentExecutor = AgentExecutor.fromAgentAndTools({
     agent,
     tools,
-    maxIterations: 10,
+    memory: chatHistory,
     verbose: true,
   });
 
-  console.log("created agent executor");
   return agentExecutor;
 }
