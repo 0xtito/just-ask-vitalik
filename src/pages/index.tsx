@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, Fragment } from "react";
 import { PaperAirplaneIcon } from "@heroicons/react/20/solid";
+import Head from "next/head";
 
 import ChatInterface from "./components/ChatInterface";
 import ErrorModal from "./components/ErrorModal";
@@ -167,49 +168,58 @@ export default function Home() {
   };
 
   return (
-    <div className="max-h-screen overflow-y-hidden">
-      <ErrorModal open={openModal} setOpen={setOpenModal} errorMsg={errorMsg} />
-      <Header
-        apiKey={apiKey}
-        setApiKey={setApiKey}
-        handleApiKey={handleApiKey}
-      />
-      <div className="flex flex-col h-screen justify-evenly items-center">
-        <ChatInterface
-          messages={messages}
-          thoughts={agentThoughts}
-          streaming={streaming}
-        ></ChatInterface>
+    <Fragment>
+      <Head>
+        <title>Just Ask Vitalik</title>
+        <meta name="description" content="Just Ask Vitalik" />
+      </Head>
+      <div className="max-h-screen overflow-y-hidden">
+        <ErrorModal
+          open={openModal}
+          setOpen={setOpenModal}
+          errorMsg={errorMsg}
+        />
+        <Header
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          handleApiKey={handleApiKey}
+        />
+        <div className="flex flex-col h-screen justify-evenly items-center">
+          <ChatInterface
+            messages={messages}
+            thoughts={agentThoughts}
+            streaming={streaming}
+          ></ChatInterface>
 
-        <div className="flex h-16 w-7/12 justify-center rounded-full bg-gray-700">
-          <div className="flex items-center justify-between w-full h-full px-1.5 py-1.5 rounded-full shadow-sm">
-            <div className="relative w-full h-full">
-              <input
-                type="text"
-                name="comment"
-                id="comment"
-                className="w-full h-full pl-5 pr-12 text-black text-xl rounded-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300"
-                placeholder="Ask Vitalik about his essay's here"
-                value={question}
-                onChange={(e) => {
-                  setQuestion(e.target.value);
-                }}
-              />
-              <button
-                type="button"
-                disabled={streaming}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:bg-slate-100 rounded-full p-1.5"
-                onClick={() => {
-                  sendQuestion(question);
-                }}
-              >
-                <PaperAirplaneIcon className="w-6 h-6 text-gray-300" />
-              </button>
+          <div className="flex h-16 w-7/12 justify-center rounded-full bg-gray-700">
+            <div className="flex items-center justify-between w-full h-full px-1.5 py-1.5 rounded-full shadow-sm">
+              <div className="relative w-full h-full">
+                <input
+                  type="input"
+                  name="comment"
+                  id="comment"
+                  className="w-full h-full pl-5 pr-12 text-black text-xl rounded-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300"
+                  placeholder="Ask Vitalik about his essays here"
+                  value={question}
+                  onSubmit={() => sendQuestion(question)}
+                  onChange={(e) => {
+                    setQuestion(e.target.value);
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={streaming}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:bg-slate-100 rounded-full p-1.5"
+                  onClick={() => sendQuestion(question)}
+                >
+                  <PaperAirplaneIcon className="w-6 h-6 text-gray-300" />
+                </button>
+              </div>
             </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
       </div>
-    </div>
+    </Fragment>
   );
 }

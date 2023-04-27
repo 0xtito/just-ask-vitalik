@@ -47,6 +47,7 @@ export default function ChatInterface({
                     </div>
                   </div>
                   <Image
+                    priority={true}
                     src={DEFAULT_USER_IMG}
                     alt={`user`}
                     width={100}
@@ -61,6 +62,7 @@ export default function ChatInterface({
               >
                 <Fragment>
                   <Image
+                    priority={true}
                     src={vitalikInfo.image}
                     alt={vitalikInfo.name}
                     width={100}

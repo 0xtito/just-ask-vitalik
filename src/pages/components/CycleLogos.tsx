@@ -56,6 +56,7 @@ export default function CyclingLogos({
         >
           {logo.type === "img" && (
             <Image
+              priority={true}
               src={logo.src}
               alt={logo.alt}
               width={imageSize(logo.alt)}
