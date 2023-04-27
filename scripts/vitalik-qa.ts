@@ -3,8 +3,12 @@ import { initChatOpenAI } from "@/utils/clients/openai-client";
 import { BufferMemory } from "langchain/memory";
 
 async function qa() {
-  const openai = initChatOpenAI(0.1);
-  const agent = await createAgent(openai, new BufferMemory());
+  const openai = initChatOpenAI(0.1, process.env.OPENAI_API_KEY!);
+  const agent = await createAgent(
+    openai,
+    process.env.OPENAI_API_KEY!,
+    new BufferMemory()
+  );
 
   if (!agent) {
     throw new Error("Could not create agent");
