@@ -13,22 +13,21 @@ import {
   AgentFinish,
   BaseChatMessage,
   HumanChatMessage,
+  SystemChatMessage,
 } from "langchain/schema";
 import { Tool } from "langchain/tools";
 
-import { vitalikAgentPrompt, SUFFIX, formatInstructions } from "../constants";
+import {
+  vitalikAgentPrompt,
+  SUFFIX,
+  formatInstructions,
+  CUSTOM_FORMAT_INSTRUCTIONS,
+} from "../constants";
 
 export class VitalikPromptTemplate extends BaseChatPromptTemplate {
   tools: Tool[];
   private prefix: string;
 
-  /**
-   *
-   * @param args tools - the tools that the agent will use to search through the vector stores
-   * @param args inputVariables - the variables that the agent will use to search through the vector stores
-   * @param args agentName - the name of the philosopher who the agent will be imitating (e.g. plato, karl_marx)
-   * @param args otherAgentName - the name of the philosopher who the agent will be debating with (e.g. plato, karl_marx)
-   */
   constructor(args: { tools: Tool[]; inputVariables: string[] }) {
     super({ inputVariables: args.inputVariables });
     this.tools = args.tools;
@@ -42,17 +41,25 @@ export class VitalikPromptTemplate extends BaseChatPromptTemplate {
   // From LangChain
   async formatMessages(values: InputValues): Promise<BaseChatMessage[]> {
     /** Construct the final template */
+    // console.log("values: ", values);
     const toolStrings = this.tools
       .map((tool) => `${tool.name}: ${tool.description}`)
       .join("\n");
     const toolNames = this.tools.map((tool) => tool.name).join("\n");
     const instructions = formatInstructions(toolNames);
 
-    const template = [this.prefix, toolStrings, instructions, SUFFIX].join(
-      "\n\n"
-    );
+    // let systemChatMessage = new SystemChatMessage(this.prefix);
+    // systemChatMessage.name = "Admin";
+
+    const template = [
+      new SystemChatMessage(this.prefix).text,
+      toolStrings,
+      instructions,
+      SUFFIX,
+    ].join("\n\n");
     /** Construct the agent_scratchpad */
     const intermediateSteps = values.intermediate_steps as AgentStep[];
+    console.log("inside formatMessage - intermediate steps", intermediateSteps);
     const agentScratchpad = intermediateSteps.reduce(
       (thoughts, { action, observation }) =>
         thoughts +
@@ -62,7 +69,11 @@ export class VitalikPromptTemplate extends BaseChatPromptTemplate {
     const newInput = { agent_scratchpad: agentScratchpad, ...values };
     /** Format the template. */
     const formatted = renderTemplate(template, "f-string", newInput);
-    return [new HumanChatMessage(formatted)];
+
+    let systemChatMessage = new SystemChatMessage(formatted);
+    systemChatMessage.name = "Admin";
+    return [systemChatMessage];
+    // return [new HumanChatMessage(formatted)];
   }
 
   partial(_values: PartialValues): Promise<BasePromptTemplate> {
@@ -74,7 +85,13 @@ export class VitalikPromptTemplate extends BaseChatPromptTemplate {
   }
 }
 
-export class CustomOutputParser extends AgentActionOutputParser {
+export class VitalikOutputParser extends AgentActionOutputParser {
+  private tools: Tool[];
+  constructor(tools: Tool[]) {
+    super();
+    this.tools = tools;
+  }
+
   async parse(text: string): Promise<AgentAction | AgentFinish> {
     if (text.includes("Final Answer:")) {
       const parts = text.split("Final Answer:");
@@ -98,6 +115,9 @@ export class CustomOutputParser extends AgentActionOutputParser {
   }
 
   getFormatInstructions(): string {
-    throw new Error("Not implemented");
+    const toolNames = this.tools.map((tool) => tool.name).join("\n");
+    const instructions = formatInstructions(toolNames);
+    return CUSTOM_FORMAT_INSTRUCTIONS;
+    // return instructions;
   }
 }
