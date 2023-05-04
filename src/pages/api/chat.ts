@@ -40,9 +40,7 @@ export default async function handler(
     throw new Error("No question in the request");
   }
 
-  if (key == "hireme!") {
-    key = process.env.OPENAI_API_KEY!;
-  }
+  if (key == "thxvitalik") key = process.env.OPENAI_API_KEY!;
 
   try {
     let sanitizedChatHistory =
